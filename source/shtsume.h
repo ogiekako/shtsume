@@ -443,6 +443,7 @@ bool enemy_effect          (const sdata_t *sdata,
  */
 mvlist_t* generate_check        (const sdata_t *sdata, tbase_t *tbase);
 mvlist_t* generate_evasion      (const sdata_t *sdata, tbase_t *tbase);
+mvlist_t* generate_evasion2     (const sdata_t *sdata, tbase_t *tbase, bool allow_mudaai);
 bool drop_check                 (const sdata_t *sdata, komainf_t drop);
 bool symmetry_check             (const sdata_t *sdata);
 extern bool g_invalid_drops;

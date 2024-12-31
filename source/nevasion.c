@@ -18,7 +18,8 @@ static mvlist_t *move_to_dest      (mvlist_t      *list,
 static mlist_t *mlist_to_desta     (mlist_t       *list,
                                     int            dest,
                                     const sdata_t *sdata,
-                                    tbase_t       *tbase);
+                                    tbase_t       *tbase,
+                                    bool          allow_mudaai );
 static mlist_t *mlist_to_destb     (mlist_t       *list,
                                     int            dest,
                                     bool           flag,
@@ -45,6 +46,13 @@ static bool is_ou_online           (const sdata_t *sdata);
 
 mvlist_t *generate_evasion   (const sdata_t *sdata,
                               tbase_t       *tbase  )
+{
+    return generate_evasion2(sdata, tbase, false);
+}
+
+mvlist_t *generate_evasion2  (const sdata_t *sdata,
+                              tbase_t       *tbase,
+                              bool          allow_mudaai  )
 {
     g_invalid_drops = false;
     g_invalid_moves = false;
@@ -105,7 +113,7 @@ mvlist_t *generate_evasion   (const sdata_t *sdata,
             //合い駒があれば着手に追加
             mlist = NULL;
             if(next_ou){
-                if(invalid_drops(sdata, dest, tbase))
+                if(!allow_mudaai && invalid_drops(sdata, dest, tbase))
                 {
                     //合駒以外に王手回避の手段がなく、玉の最近接位置の合駒が無駄合の場合、
                     //詰みの可能性があるのでflagを立てておく。
@@ -115,7 +123,7 @@ mvlist_t *generate_evasion   (const sdata_t *sdata,
                 {
                     mlist = evasion_drop(mlist, dest, sdata);
                     //適切な持ち駒がなく、合駒着手が生成できない場合、flagを立てておく
-                    if(!mlist) nflag = true;
+                    if(!allow_mudaai && !mlist) nflag = true;
                 }
             }
             else     {
@@ -132,7 +140,7 @@ mvlist_t *generate_evasion   (const sdata_t *sdata,
             if(is_ou_online(sdata)){
                 if(next_ou){
                     if(!move && !mlist)
-                        mmlist = mlist_to_desta(mmlist, dest, sdata, tbase);
+                        mmlist = mlist_to_desta(mmlist, dest, sdata, tbase, allow_mudaai);
                     else
                         mvlist = move_to_dest(mvlist, dest, sdata);
                 }
@@ -147,7 +155,7 @@ mvlist_t *generate_evasion   (const sdata_t *sdata,
             else{
                 if(next_ou){
                     if(!move && !mlist)
-                        mmlist = mlist_to_desta(mmlist, dest, sdata, tbase);
+                        mmlist = mlist_to_desta(mmlist, dest, sdata, tbase, allow_mudaai);
                     else
                         mvlist = move_to_dest(mvlist, dest, sdata);
                 }
@@ -508,7 +516,8 @@ mvlist_t *move_to_dest        (mvlist_t *list,
 mlist_t *mlist_to_desta       (mlist_t       *list,
                                int            dest,
                                const sdata_t *sdata,
-                               tbase_t       *tbase)
+                               tbase_t       *tbase,
+                               bool           allow_mudaai )
 {
     mlist_t *mlist = list;
     mlist_t *new_mlist;
@@ -527,13 +536,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GFU_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(GFU_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -549,13 +558,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GKY_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(GKY_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -571,13 +580,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GKE_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(GKE_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -593,12 +602,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GGI_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -612,7 +621,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]){
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -627,12 +636,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GKA_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -647,12 +656,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(GHI_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -666,7 +675,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]) {
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -680,7 +689,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]) {
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -697,13 +706,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SFU_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(SFU_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -719,13 +728,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SKY_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(SKY_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -741,13 +750,13 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SKE_PROMOTE(dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     if(SKE_NORMAL(dest) ){
                         MV_SET(mv,src,dest,0);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                         }
                     }
@@ -763,12 +772,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SGI_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -782,7 +791,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]) {
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -797,12 +806,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SKA_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -817,12 +826,12 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(!S_PINNED(sdata)[src]){
                     if(SHI_PROMOTE(src,dest)){
                         MV_SET(mv,src,dest,1);
-                        if(!invalid_moves(sdata, mv, tbase)){
+                        if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                             MLIST_SET_MOVE_PROM(mlist, new_mlist, src, dest);
                         }
                     }
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -836,7 +845,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]) {
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
@@ -850,7 +859,7 @@ mlist_t *mlist_to_desta       (mlist_t       *list,
                 if(src<0) break;
                 if(!S_PINNED(sdata)[src]) {
                     MV_SET(mv,src,dest,0);
-                    if(!invalid_moves(sdata, mv, tbase)){
+                    if(allow_mudaai || !invalid_moves(sdata, mv, tbase)){
                         MLIST_SET_MOVE_NORM(mlist, new_mlist, src, dest);
                     }
                 }
